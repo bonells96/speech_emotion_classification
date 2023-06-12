@@ -131,17 +131,16 @@ def CrossValidationByUserDl(X, y_true, model, users_id, model_name='model', num_
     return model
 
 
-
 ################################################ Training ################################################
 
 
-def train_net(net, X, labels, num_epochs=10000, batch_size=25, learning_rate=1e-4, verbose=True, plot_=True):
+def train_net(model, X, labels, num_epochs=10000, batch_size=25, learning_rate=1e-4, verbose=True, plot_=True):
 
     accsCat = {'neutral': [], 'fear':[], 'disgust': [], 'happiness': [], 'boredom': [], 'sadness': [], 'anger': [] }
     epochs = []
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     dataset = torch.utils.data.TensorDataset(torch.Tensor(X), (torch.LongTensor(labels)))
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -150,14 +149,14 @@ def train_net(net, X, labels, num_epochs=10000, batch_size=25, learning_rate=1e-
         running_loss = 0.0
         for i, (inputs, targets) in enumerate(dataloader):
             optimizer.zero_grad()
-            outputs = net(inputs)
+            outputs = model(inputs)
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
 
             running_loss += loss.item()
         
-        acc_cat = accuracy_per_category(torch.LongTensor(labels),net(torch.Tensor(X)) )
+        acc_cat = accuracy_per_category(torch.LongTensor(labels),model(torch.Tensor(X)) )
         for cat, acc in acc_cat.items():
             accsCat[cat].append(acc)
 
@@ -166,7 +165,7 @@ def train_net(net, X, labels, num_epochs=10000, batch_size=25, learning_rate=1e-
 
             if (epoch+1)%100==0:
                 print(f"Epoch {epoch + 1}: Loss = {running_loss}")
-                print(f"Accuracy: {((len(X)-nb_errors(torch.LongTensor(labels), net(torch.Tensor(X))))/len(X))*100:.02f} % ")
+                print(f"Accuracy: {((len(X)-nb_errors(torch.LongTensor(labels), model(torch.Tensor(X))))/len(X))*100:.02f} % ")
 
     if plot_:
 
@@ -181,8 +180,45 @@ def train_net(net, X, labels, num_epochs=10000, batch_size=25, learning_rate=1e-
 
         plt.legend(title='Category')
 
-    return net
+    return model
 
+
+
+def train_net_with_val_results(model, X_train, y_train, X_test, y_test, num_epochs=1000, batch_size = 25,learning_rate=1e-4):
+    epochs = []
+    acc_train = []
+    acc_test = []
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    dataset = torch.utils.data.TensorDataset(torch.Tensor(X), (torch.LongTensor(y_train)))
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+    for epoch in range(num_epochs):
+        running_loss = 0.0
+        for i, (inputs, targets) in enumerate(dataloader):
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+            
+            running_loss += loss.item()
+        epochs.append(epoch)
+        acc_train.append(len(X_train)-nb_errors(torch.LongTensor(y_train), model(torch.Tensor(X_train))))/len(X_train)
+        acc_test.append(len(X_test)-nb_errors(torch.LongTensor(y_test), model(torch.Tensor(y_test))))/len(y_test)
+
+        fig, ax = plt.subplots(figsize=(12, 8))
+        sns.set()
+        sns.lineplot(x=epochs, y=acc_train, ax=ax, label = 'train accuracy')
+        sns.lineplot(x=epochs, y=acc_test, ax=ax, label = 'test accuracy')
+
+
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.title('Accuracy per Category over Epochs')
+
+    return model
 
 ################################################ Helper Functions ################################################
 

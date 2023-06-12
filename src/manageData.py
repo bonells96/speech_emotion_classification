@@ -4,10 +4,43 @@ from typing import Dict, Tuple
 import librosa
 from os import listdir
 from os.path import join
-
+import numpy as np
+import random 
+from sklearn.utils import shuffle
+import requests, zipfile, io
+import os
+from os.path import join
 
 code_emotions = {'W': 'anger', 'L':'boredom', 'E':'disgust', 'A':'fear',
                 'F':'happiness', 'T':'sadness', 'N':'neutral'}
+
+
+
+def run_data_pipeline(test_size=0.2, seed=42):
+    
+    path_data = load_data()
+    data = createDataFrame(join(path_data, 'wav'))
+    train, test = splitTrainTestByUser(data=data, test_size=test_size, random_state=seed)
+    return train, test
+
+
+
+def load_data():
+
+    url = 'http://emodb.bilderbar.info/download/download.zip'
+    path_data = (join(os.getcwd(), 'data'))
+    os.makedirs(path_data, exist_ok=True) 
+
+    response = requests.get(url)
+    z = zipfile.ZipFile(io.BytesIO(response.content))
+    z.extractall(path_data)
+
+    if response.status_code == 200:
+        with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+            z.extractall(path_data)
+        return path_data
+    else:
+        return (f"Error downloading file. Status code: {response.status_code}")
                 
 
 def createDataFrame(folder_name:str) -> pd.DataFrame:
@@ -63,4 +96,19 @@ def getTsFromAudio(file_name:str) -> Tuple[array, int]:
     return y, sr
 
 
+def splitTrainTestByUser(data: pd.DataFrame, test_size:float = 0.2, random_state:int = 42, save_data:bool=False, path_data=None):
+    users = np.unique(data.loc[:,'user_id'].values.tolist())
+    num_test = int(len(users)*test_size)
+
+    random.seed(random_state)
+    users_test = random.sample(list(users), num_test)
+
+    train = data.loc[~data.loc[:,'user_id'].isin(users_test),]
+    test = data.loc[data.loc[:,'user_id'].isin(users_test),]
+
+    if save_data:
+        return f'data saved in'
+
+    else: 
+        return shuffle(train), shuffle(test)
 
