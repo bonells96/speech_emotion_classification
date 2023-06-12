@@ -5,7 +5,8 @@ import numpy as np
 from typing import Dict
 import pandas as pd
 from sklearn.metrics import f1_score, precision_score, recall_score
-
+import torch
+from src.models import train_net
 
 emotion2int = {'neutral':0, 'fear':1, 'disgust':2, 'happiness':3, 'boredom':4, 'sadness':5, 'anger':6}
 
@@ -13,7 +14,7 @@ emotion2int = {'neutral':0, 'fear':1, 'disgust':2, 'happiness':3, 'boredom':4, '
 ################################################ Cross Validation ################################################
 
 
-def CrossValidationByUser(X, y_true, model, users_id):
+def CrossValidationByUser(X, y_true, model, users_id, model_name='model'):
 
     unique_users = np.unique(users_id)
 
@@ -26,18 +27,28 @@ def CrossValidationByUser(X, y_true, model, users_id):
         indexes_train = np.where(users_id!= user)[0]
 
         X_train = X[indexes_train]
-        y_train = X[indexes_train]
+        y_train = y_true[indexes_train]
+
 
         X_val = X[indexes_val]
-        y_val = X[indexes_val]
-
+        y_val = y_true[indexes_val]
+            
         model.fit(X_train, y_train)
         preds = model.predict(X_val)
+        
+        f1s.append(f1_score(y_val, preds, average='macro', zero_division=0))
+        precisions.append(precision_score(y_val, preds, average='macro', zero_division=0))
+        recalls.append(recall_score(y_val, preds, average='macro', zero_division=0))
 
-        f1s.append(f1_score(y_val, preds, average='macro'))
+    print('|Model|F1|Precision|Recall|')
+    print('|:----:|:---:|:---:|:----:|')
+    
+    means = [np.mean(metric) for metric in [f1s, precisions, recalls]]
+    stds = [np.std(metric) for metric in [f1s, precisions, recalls]]
 
-    return f1s
+    print(f'|{model_name}|{means[0]:.02f}+-{stds[0]:.02f}|{means[1]:.02f}+-{stds[1]:.02f}|{means[2]:.02f}+-{stds[2]:.02f}|')
 
+    return None
 
 
 ################################################ Final Metrics ################################################
