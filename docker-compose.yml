@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+    speech-emotion-recognition:
+        build: .
+        image: speech-emotion-recognition
+    flask_api:
+        image: speech-emotion-recognition
+        command: python application.py
+        ports:
+            - 5000:5000
+        mem_reservation: 2048m
+        cpus: 4
+    jupyter_notebook:
+        image: speech-emotion-recognition
+        command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --port 5001 --NotebookApp.token='password'
+        ports:
+            - 5001:5001
