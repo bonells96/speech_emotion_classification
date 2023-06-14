@@ -8,7 +8,7 @@ from torch.nn import functional as F
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from sklearn.metrics import f1_score, recall_score, precision_score
+from sklearn.metrics import f1_score, recall_score, precision_score, accuracy_score
 
 
 int2emotion = {0:'neutral', 1:'fear', 2:'disgust', 3:'happiness', 4:'boredom', 5:'sadness', 6:'anger'}
@@ -59,6 +59,27 @@ class StandardNetBn(nn.Module):
         out = self.fc3(x)
         return out
 
+    def predict(self, x):
+
+        outputs = self.forward(x)
+        preds = torch.argmax(outputs, dim=1)
+
+        return preds
+
+    def predict_sample(self, x, return_string=True):
+        x = x.unsqueeze(0)
+        
+        outputs = self.forward(x)
+        pred_class = torch.argmax(outputs, dim=1)
+        print(pred_class)
+        if return_string:
+            return int2emotion[pred_class.item()]
+        else:
+            return pred_class.item()
+
+    
+
+
 ################################################ Neural net Batch Norm and Dropout ################################################
 
 class StandardNetBnD(nn.Module):
@@ -88,6 +109,20 @@ class StandardNetBnD(nn.Module):
         x = self.dropout(x)
         out = self.fc3(x)
         return out
+
+    def predict_sample(self, x, return_string=True):
+        x = x.unsqueeze(0)
+        
+        outputs = self.forward(x)
+        pred_class = torch.argmax(outputs, dim=1)
+        print(pred_class)
+        if return_string:
+            return int2emotion[pred_class.item()]
+        else:
+            return pred_class.item()
+
+
+
 
 
 ################################################ Cross Validation ################################################
@@ -185,13 +220,12 @@ def train_net(model, X, labels, num_epochs=10000, batch_size=25, learning_rate=1
 
 
 def train_net_with_val_results(model, X_train, y_train, X_test, y_test, num_epochs=1000, batch_size = 25,learning_rate=1e-4):
-    epochs = []
     acc_train = []
     acc_test = []
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    dataset = torch.utils.data.TensorDataset(torch.Tensor(X), (torch.LongTensor(y_train)))
+    dataset = torch.utils.data.TensorDataset(torch.Tensor(X_train), (torch.LongTensor(y_train)))
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     for epoch in range(num_epochs):
@@ -204,21 +238,36 @@ def train_net_with_val_results(model, X_train, y_train, X_test, y_test, num_epoc
             optimizer.step()
             
             running_loss += loss.item()
-        epochs.append(epoch)
-        acc_train.append(len(X_train)-nb_errors(torch.LongTensor(y_train), model(torch.Tensor(X_train))))/len(X_train)
-        acc_test.append(len(X_test)-nb_errors(torch.LongTensor(y_test), model(torch.Tensor(y_test))))/len(y_test)
+        
 
-        fig, ax = plt.subplots(figsize=(12, 8))
-        sns.set()
-        sns.lineplot(x=epochs, y=acc_train, ax=ax, label = 'train accuracy')
-        sns.lineplot(x=epochs, y=acc_test, ax=ax, label = 'test accuracy')
+        preds_train = torch.argmax(model(torch.Tensor(X_train)), dim=1).detach().numpy()
+        preds_test = torch.argmax(model(torch.Tensor(X_test)), dim=1).detach().numpy()
+
+        acc_train.append(accuracy_score(y_train, preds_train))
+        acc_test.append(accuracy_score(y_test, preds_test))
+        #acc_train.append(len(X_train)-nb_errors(torch.LongTensor(y_train), model(torch.Tensor(X_train)))/len(X_train))
+        #acc_test.append(len(X_test)-nb_errors(torch.LongTensor(y_test), model(torch.Tensor(X_test)))/len(y_test))
 
 
-        plt.xlabel('Epoch')
-        plt.ylabel('Accuracy')
-        plt.title('Accuracy per Category over Epochs')
+    """
+    window_size = 5
+    acc_train_smooth = np.convolve(acc_train, np.ones(window_size) / window_size, mode='same')
+    acc_test_smooth = np.convolve(acc_test, np.ones(window_size) / window_size, mode='same')
+    fig, ax = plt.subplots(figsize=(12, 8))
+    sns.set_style("whitegrid")
+    sns.lineplot(x=np.arange(len(acc_train)-5), y=acc_train_smooth[:-5], ax=ax, label = 'train accuracy')
+    sns.lineplot(x=np.arange(len(acc_test)-5), y=acc_test_smooth[:-5], ax=ax, label = 'test accuracy')
 
-    return model
+    sns.despine()
+    plt.tight_layout()
+
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.title('Smoothed Accuracy per Category over Epochs')
+    plt.legend()
+    plt.show()
+    """
+    return model, acc_train, acc_test
 
 ################################################ Helper Functions ################################################
 
