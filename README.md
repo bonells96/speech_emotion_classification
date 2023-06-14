@@ -8,7 +8,7 @@ The best results achieved are:
 |:--:|:---:|:-:|:--:|
 |neutral|0.48|0.43|0.46|
 |fear|0.36|0.20|0.26|
-|disgust|0.00|0.00|nan|
+|disgust|0.00|0.00|0.00|
 |happiness|0.64|0.35|0.45|
 |boredom|0.27|0.48|0.34|
 |sadness|0.77|0.74|0.76|
