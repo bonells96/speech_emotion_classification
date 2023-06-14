@@ -2,7 +2,7 @@
 
 Use case of an end-to-end solution for Speech Emotion Recognition (SER) in the German language. The goal is to accurately classify the emotional states conveyed in spoken German utterances. The project utilizes data from the [emo-db](http://emodb.bilderbar.info/start.html) database.
 
-The best results achieved are:
+The best model trained has an accuracy of 64.49% on the test set. The results per category are:
 
 |Emotion group|Precision |Recall|F1|
 |:--:|:---:|:-:|:--:|
@@ -14,12 +14,10 @@ The best results achieved are:
 |sadness|0.77|0.74|0.76|
 |anger|0.88|0.81|0.85|
 
-![](img/confusion_matrix_best.png)
 
 ## Data
 
 The data comes from [emo-db](http://emodb.bilderbar.info/start.html) database.
-
 
 
 ## Model Selection
@@ -74,15 +72,75 @@ torchvision==0.15.2
 xgboost==1.7.5
 ````
 
+## Docker and Flask
+
+### Installation in Docker
+
+```
+docker-compose build speech-emotion-recognition
+docker-compose up speech-emotion-recognition
+```
+
+### Usage
+
+One the docker is running you have 2 ports, one to access the [notebook](Report_SER.ipynb) and the other to access the FLASK API.
+
+#### Notebook
+
+To access the [notebook](Report_SER.ipynb), you have to go to the URL: http://0.0.0.0:5001 
+
+Then you will arrive to a website where they ask you to introduct a password or token, you have to write:
+
+```
+visiumSER
+```
+
+#### FLASK API:
+
+In the flask api there are 2 endpoints:
+
+1. one for training the model
+2. another for predicting an audio sample
+
+Before predicting a sample, it is necessary to **train** first otherwise there will be no model in the docker and the prediction will not be possible
+
+#### /train
+
+To train the model once your docker is running:
+
+1. Open a terminal
+2. Write the following command:
+
+```
+curl --request GET --url 'http://0.0.0.0:5000/train'
+```
+
+Then the response should be like:
+
+```
+model trained with final acc in train: 0.7406542056074766 and in test: 0.616822429906542
+```
 
 
+#### /pred
+
+Once you passed the train request, on the terminal write:
+
+````
+curl --request POST 'http://0.0.0.0:5000/pred' \
+--header 'Content-Type: application/json' \
+-d '{
+    "id":"03a01Fa" }'
+````
+
+Then the response should be a dictionnary with the class:
+
+```
+{"class":"fear"}
+```
 
 ## References
 
-[Linguistic and Gender Variation in Speech Emotion Recognition using Spectral Features, Zachary Dair, Ryan Donovan, Ruairi O'Reilly (2021)](https://arxiv.org/pdf/2112.09596v2.pdf)
+[Multimodal Speech Emotion Recognition and Ambiguity Resolution](https://arxiv.org/pdf/1904.06022v1.pdf) -> great for extracting features
 
-[Multimodal Speech Emotion Recognition
-and Ambiguity Resolution](https://arxiv.org/pdf/1904.06022v1.pdf) -> great for extracting features
-
-[Audio signal feature extraction and clustering
- ](https://medium.com/heuristics/audio-signal-feature-extraction-and-clustering-935319d2225)
+[Audio signal feature extraction and clustering](https://medium.com/heuristics/audio-signal-feature-extraction-and-clustering-935319d2225)
