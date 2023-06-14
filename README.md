@@ -1,6 +1,6 @@
 # Speech Emotion Recognition
 
-Use case of an end-to-end solution for Speech Emotion Recognition (SER) in the German language. The goal is to accurately classify the emotional states conveyed in spoken German utterances. The project utilizes data from the [emo-db](http://emodb.bilderbar.info/start.html) database.
+Use case of an end-to-end solution for Speech Emotion Recognition (SER) in the German language. The goal is to accurately classify the emotional states conveyed in spoken German utterances. The project utilizes data from the [Berlin Database of Emotional Speech](http://emodb.bilderbar.info/start.html) database.
 
 The best model trained has an accuracy of 64.49% on the test set. The results per category are:
 
@@ -17,7 +17,20 @@ The best model trained has an accuracy of 64.49% on the test set. The results pe
 
 ## Data
 
-The data comes from [emo-db](http://emodb.bilderbar.info/start.html) database.
+The data comes from [Berlin Database of Emotional Speech](http://emodb.bilderbar.info/start.html) database.
+
+The Berlin Database of Emotional Speech It contains 535 utterances spoken by actors in a happy, angry, anxious, fearful, bored and disgusted way as well as in a neutral version. You can choose utterances from 10 different actors and ten different texts.
+
+![]()
+
+We separate the dataset into a train and test set. To avoid overfitting the data is separated by users (an actor can not have a recording in the train and another in the test set).
+
+The train set has 428 recordings of 8 users and is used to:
+- selecting the best features
+- training the models
+- select best hyperparameters
+
+The test set contains the recordings of has 107 recordings of 2 users and is **only** used to evaluate the performance of the final models
 
 
 ## Model Selection
