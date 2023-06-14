@@ -14,6 +14,7 @@ The best model trained has an accuracy of 64.49% on the test set. The results pe
 |sadness|0.77|0.74|0.76|
 |anger|0.88|0.81|0.85|
 
+The investigation is performed in this [notebook](Report_SER.ipynb)
 
 ## Data
 
@@ -21,7 +22,7 @@ The data comes from [Berlin Database of Emotional Speech](http://emodb.bilderbar
 
 The Berlin Database of Emotional Speech It contains 535 utterances spoken by actors in a happy, angry, anxious, fearful, bored and disgusted way as well as in a neutral version. You can choose utterances from 10 different actors and ten different texts.
 
-![]()
+![](img/emotion_distribution.png)
 
 We separate the dataset into a train and test set. To avoid overfitting the data is separated by users (an actor can not have a recording in the train and another in the test set).
 
