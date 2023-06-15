@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.nn import functional as F
+import time
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -12,6 +13,10 @@ from sklearn.metrics import f1_score, recall_score, precision_score, accuracy_sc
 
 
 int2emotion = {0:'neutral', 1:'fear', 2:'disgust', 3:'happiness', 4:'boredom', 5:'sadness', 6:'anger'}
+code2emotion = {'W': 'anger', 'L':'boredom', 'E':'disgust', 'A':'fear',
+                'F':'happiness', 'T':'sadness', 'N':'neutral'}
+
+emotion2code = {emo:code for code, emo in code2emotion.items()}
 
 
 ################################################ Simple neural net ################################################
@@ -71,9 +76,9 @@ class StandardNetBn(nn.Module):
         
         outputs = self.forward(x)
         pred_class = torch.argmax(outputs, dim=1)
-        print(pred_class)
+        emotion = int2emotion[pred_class.item()]
         if return_string:
-            return int2emotion[pred_class.item()]
+            return {'label':pred_class.item(), 'emotion':emotion, 'code': emotion2code[emotion]}
         else:
             return pred_class.item()
 
@@ -129,12 +134,24 @@ class StandardNetBnD(nn.Module):
 
 
 def CrossValidationByUserDl(X, y_true, model, users_id, model_name='model', num_epochs=1000):
+    """
+    Perform cross-validation by user.
 
+    Args:
+        X (numpy.ndarray): Feature matrix.
+        y_true (numpy.ndarray): True labels.
+        model: Model to be evaluated.
+        users_id (numpy.ndarray): User IDs corresponding to each sample.
+        model_name (str, optional): Name of the model. Defaults to 'model'.
+
+    """
     unique_users = np.unique(users_id)
 
     f1s = []
     precisions = []
     recalls = []
+    train_times = []
+    inference_times = []
 
     for user in unique_users:
         indexes_val = np.where(users_id == user)[0]
@@ -146,24 +163,38 @@ def CrossValidationByUserDl(X, y_true, model, users_id, model_name='model', num_
 
         X_val = X[indexes_val]
         y_val = y_true[indexes_val]
-            
+        
+        start_train = time.time()
         model = train_net(model, X_train, y_train, num_epochs=num_epochs, verbose=False, plot_=False)
+        end_train = time.time()
+
+        start_inference = time.time()
         outputs = model(torch.Tensor(X_val))
+        end_inference = time.time()
+
         preds = torch.argmax(outputs, dim=1).detach().numpy()
         
+        train_times.append(end_train-start_train)
+        inference_times.append( X_val.shape[0]/(end_inference-start_inference) )
         f1s.append(f1_score(y_val, preds, average='macro', zero_division=0))
         precisions.append(precision_score(y_val, preds, average='macro', zero_division=0))
         recalls.append(recall_score(y_val, preds, average='macro', zero_division=0))
 
-    print('|Model|F1|Precision|Recall|')
-    print('|:----:|:---:|:---:|:----:|')
+    print('|Model|F1|Precision|Recall|Train Time (s)|Inference Time (docs/s)|')
+    print('|:----:|:---:|:---:|:----:|:----:|:---:|')
     
-    means = [np.mean(metric) for metric in [f1s, precisions, recalls]]
-    stds = [np.std(metric) for metric in [f1s, precisions, recalls]]
+    means = [np.mean(metric) for metric in [f1s, precisions, recalls, train_times, inference_times]]
+    stds = [np.std(metric) for metric in [f1s, precisions, recalls, train_times, inference_times]]
 
-    print(f'|{model_name}|{means[0]:.02f}+-{stds[0]:.02f}|{means[1]:.02f}+-{stds[1]:.02f}|{means[2]:.02f}+-{stds[2]:.02f}|')
+    output = f'|{model_name}|'
+    for k in range(len(means)):
+        output += f'{means[k]:.02f}+-{stds[k]:.02f}|'
 
-    return model
+    print(output)
+
+    #print(f'|{model_name}|{means[0]:.02f}+-{stds[0]:.02f}|{means[1]:.02f}+-{stds[1]:.02f}|{means[2]:.02f}+-{stds[2]:.02f}|')
+
+    return None
 
 
 ################################################ Training ################################################
@@ -218,6 +249,9 @@ def train_net(model, X, labels, num_epochs=10000, batch_size=25, learning_rate=1
     return model
 
 
+    ################################################ Training and Validation ################################################
+
+
 
 def train_net_with_val_results(model, X_train, y_train, X_test, y_test, num_epochs=1000, batch_size = 25,learning_rate=1e-4):
     acc_train = []
@@ -245,28 +279,6 @@ def train_net_with_val_results(model, X_train, y_train, X_test, y_test, num_epoc
 
         acc_train.append(accuracy_score(y_train, preds_train))
         acc_test.append(accuracy_score(y_test, preds_test))
-        #acc_train.append(len(X_train)-nb_errors(torch.LongTensor(y_train), model(torch.Tensor(X_train)))/len(X_train))
-        #acc_test.append(len(X_test)-nb_errors(torch.LongTensor(y_test), model(torch.Tensor(X_test)))/len(y_test))
-
-
-    """
-    window_size = 5
-    acc_train_smooth = np.convolve(acc_train, np.ones(window_size) / window_size, mode='same')
-    acc_test_smooth = np.convolve(acc_test, np.ones(window_size) / window_size, mode='same')
-    fig, ax = plt.subplots(figsize=(12, 8))
-    sns.set_style("whitegrid")
-    sns.lineplot(x=np.arange(len(acc_train)-5), y=acc_train_smooth[:-5], ax=ax, label = 'train accuracy')
-    sns.lineplot(x=np.arange(len(acc_test)-5), y=acc_test_smooth[:-5], ax=ax, label = 'test accuracy')
-
-    sns.despine()
-    plt.tight_layout()
-
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.title('Smoothed Accuracy per Category over Epochs')
-    plt.legend()
-    plt.show()
-    """
     return model, acc_train, acc_test
 
 ################################################ Helper Functions ################################################

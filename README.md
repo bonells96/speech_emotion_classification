@@ -2,7 +2,19 @@
 
 Use case of an end-to-end solution for Speech Emotion Recognition (SER) in the German language. The goal is to accurately classify the emotional states conveyed in spoken German utterances. The project utilizes data from the [Berlin Database of Emotional Speech](http://emodb.bilderbar.info/start.html) database.
 
-The best model trained has an accuracy of 64.49% on the test set. The results per category are:
+## Executive Summary 
+
+
+The best model trained is a Standard Neural Net with 3 layers and 2 layers with Batch Normalization. We used the following hyperparameters:
+
+- hidden_size: 50 (for all the hidden layers)
+- activation function: ReLU (hidden layers)
+- lr: 1e-4
+- EPOCHS: 2000
+- Training time:
+- Inference time: 
+
+The model has an accuracy of 64.49% on the test set. The results per category are:
 
 |Emotion group|Precision |Recall|F1|
 |:--:|:---:|:-:|:--:|
@@ -160,3 +172,5 @@ Then the response should be a dictionnary with the class:
 [Multimodal Speech Emotion Recognition and Ambiguity Resolution](https://arxiv.org/pdf/1904.06022v1.pdf) -> great for extracting features
 
 [Audio signal feature extraction and clustering](https://medium.com/heuristics/audio-signal-feature-extraction-and-clustering-935319d2225)
+
+[The dummy’s guide to MFCC](https://medium.com/prathena/the-dummys-guide-to-mfcc-aceab2450fd)

@@ -3,6 +3,10 @@ import librosa
 import pandas as pd
 
 class FeatureExtractor:
+    """
+    Class for extracting features from audio time series data.
+    """
+
     def __init__(self):
         self.features = {
             'MeanZcr': extractMeanZcr,
@@ -27,20 +31,26 @@ class FeatureExtractor:
         }
 
     def __call__(self, ts, sr, selected_features=None):
+        """
+        Extracts features from audio time series data.
+
+        Inputs:
+            ts (numpy.ndarray): Audio time series data.
+            sr (int): Sample rate of the audio data.
+            selected_features (list, optional): Features to extract.
+
+        Returns:
+            numpy.ndarray: Extracted features.
+        """
         if selected_features is None:
             selected_features = self.features.keys()
-        features = []
+        features = np.array([])
         for feature in selected_features:
             try:
-                features.append(self.features[feature](ts, sr))
+                features = np.hstack((features, self.features[feature](ts, sr)))
             except:
-                features.append(self.features[feature](ts))
-        return np.array(features)
-
-
-def mapDataToFeatureMatrix(data:pd.DataFrame, feature_extract: FeatureExtractor, feature_subset=None):
-    X = np.apply_along_axis(lambda x: feature_extract(x[0], x[1], feature_subset), axis=1, arr=np.array(data.loc[:,['ts', 'sr']].values))
-    return X
+                features = np.hstack((features, self.features[feature](ts)))
+        return features
 
 
 
@@ -91,6 +101,15 @@ def extractStdMel(ts, sr):
 
 def extractMedianMel(ts, sr):
     return np.median(librosa.feature.melspectrogram(y=ts, sr=sr).T)
+
+def extractMeanTonnetz(ts, sr):
+    return np.mean(librosa.feature.tonnetz(y=ts, sr=sr).T)
+
+def extractStdTonnetz(ts, sr):
+    return np.mean(librosa.feature.tonnetz(y=ts, sr=sr).T)
+
+def extractMedianTonnetz(ts, sr):
+    return np.mean(librosa.feature.tonnetz(y=ts, sr=sr).T)
 
 def extractMean(ts):
     return np.mean(ts)
