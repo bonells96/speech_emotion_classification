@@ -54,8 +54,6 @@ We selected this model by Cross Validation on different architecture and model t
 Below a summary of the CV results:
 
 
-(UPDATE RESULTS -> MUCH BETTER RESULTS IN EXPERIMENTS reaching 0.65)
-
 |Model|F1|Precision|Recall|
 |:----:|:---:|:---:|:----:|
 |LGR|0.49+-0.14|0.57+-0.14|0.52+-0.14|
@@ -169,8 +167,10 @@ Then the response should be a dictionnary with the class:
 
 ## References
 
-[Multimodal Speech Emotion Recognition and Ambiguity Resolution](https://arxiv.org/pdf/1904.06022v1.pdf) -> great for extracting features
+[Multimodal Speech Emotion Recognition and Ambiguity Resolution](https://arxiv.org/pdf/1904.06022v1.pdf) 
 
 [Audio signal feature extraction and clustering](https://medium.com/heuristics/audio-signal-feature-extraction-and-clustering-935319d2225)
 
 [The dummy’s guide to MFCC](https://medium.com/prathena/the-dummys-guide-to-mfcc-aceab2450fd)
+
+[Speech Emotion Recognition, Kaggle Notebook](https://www.kaggle.com/code/bhavikjain/speech-emotion-recognition)
